@@ -131,7 +131,8 @@ tabs = st.tabs([
     "✍️ Manual Entry (Branch 1)",
     "📸 AI / Image Scan (Branch 2)",
     "🔄 Stock Checkout & Disposal (Node 7)",
-    "📧 Email Alert Audit Log"
+    "📧 Email Alert Audit Log",
+    "🎓 Interview Q&A & PDF Guide"
 ])
 
 
@@ -468,3 +469,103 @@ with tabs[4]:
         )
     else:
         st.info("No alert logs recorded yet.")
+
+
+# ------------------------------------------------------------------------------
+# TAB 6: INTERVIEW PREPARATION GUIDE & PDF DOWNLOAD
+# ------------------------------------------------------------------------------
+with tabs[5]:
+    st.header("🎓 Interview Preparation Guide & Flow Diagrams")
+    st.caption("Comprehensive technical Q&A, architectural explanations in easy words, and interview cheatsheet.")
+
+    pdf_file_path = Path(__file__).resolve().parent / "Product_Expiry_Tracking_System_Interview_Preparation_Guide.pdf"
+    diagram_file_path = Path(__file__).resolve().parent / "architecture_flow_diagram.png"
+
+    # PDF Download Button
+    if pdf_file_path.exists():
+        with open(pdf_file_path, "rb") as f:
+            pdf_bytes = f.read()
+
+        col_pdf1, col_pdf2 = st.columns([2, 1])
+        with col_pdf1:
+            st.success("📄 **Interview Preparation PDF Guide is ready!** Contains 12 core technical questions with simple explanations, real-world examples, and quick revision tables.")
+        with col_pdf2:
+            st.download_button(
+                label="📥 Download Interview Guide (PDF)",
+                data=pdf_bytes,
+                file_name="Product_Expiry_Tracking_System_Interview_Preparation_Guide.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+
+    # Embedded Architectural Flow Diagram
+    st.markdown("### 🗺️ End-to-End Architectural Flow Diagram")
+    if diagram_file_path.exists():
+        st.image(str(diagram_file_path), caption="7-Node Architectural Workflow Mapping", use_container_width=True)
+
+    st.markdown("---")
+    st.markdown("### 💬 Top Interview Questions & Model Answers (In Easy Words)")
+
+    with st.expander("Q1: Can you summarize the project and what problem it solves?", expanded=True):
+        st.markdown("""
+        **In Easy Words:**  
+        Retail stores and supermarkets lose huge money when perishable items (like milk, bread, yogurt, medicines) expire on shelves.  
+        Our project automates the entire process: staff scan products or upload packaging photos, Google Gemini AI extracts the expiry date and batch code, PostgreSQL stores it securely, our mathematical engine calculates days remaining every day, and the system sends urgent alerts and email broadcasts for items expiring soon so they can be sold first via FIFO (First-In, First-Out).
+
+        💡 **Real Example:**  
+        An Amul milk packet with *"Use By: 20.07.26"* is scanned. Gemini reads the date, normalizes it to `2026-07-20`, and alerts the store manager if it has less than 30 days remaining.
+        """)
+
+    with st.expander("Q2: How does the Lifespan Equation and its 3 status boundaries work?"):
+        st.markdown("""
+        **In Easy Words:**  
+        The core logic uses a straightforward calendar formula:  
+        $$\\text{Days Remaining} = \\text{Expiry Date} - \\text{Current Date}$$
+
+        Based on the result, it dynamically assigns 3 statuses:
+        1. 🚨 **EXPIRED** $(\\text{Days} \\le 0)$: Past its expiration date. Triggers mandatory disposal and removal from shelves.
+        2. ⚠️ **NEAR EXPIRY** $(0 < \\text{Days} \\le 30)$: Less than 30 days left. Triggers FIFO stock rotation and discount markdowns.
+        3. ✅ **SAFE** $(\\text{Days} > 30)$: Fresh product. Standard shelf placement.
+
+        💡 **Real Example:**  
+        If today is Oct 5, an item expiring on Sept 30 has **-5 days** (`EXPIRED`). An item expiring Oct 14 has **+9 days** (`NEAR EXPIRY`).
+        """)
+
+    with st.expander("Q3: Why did you choose raw SQL with psycopg2 instead of an ORM?"):
+        st.markdown("""
+        **In Easy Words:**  
+        - **Speed & Control:** Raw SQL avoids the hidden overhead of heavy ORMs and lets us see exactly what the database executes.  
+        - **Security:** We used parameterized queries (`%s`), which means user inputs are never concatenated directly into the query, completely eliminating SQL injection risks.  
+        - **Native UPSERT:** We used PostgreSQL's native `ON CONFLICT (sku) DO UPDATE` so that scanning an existing product additively increases the stock count in a single atomic database query.
+        """)
+
+    with st.expander("Q4: How does the AI Vision extraction work with Google Gemini?"):
+        st.markdown("""
+        **In Easy Words:**  
+        We use Google's free-tier `google-genai` SDK (`gemini-3.5-flash`). We send the image bytes along with a strict prompt telling Gemini:  
+        *"Look at this packaging, extract product name, batch/SKU, and normalize the expiry date into YYYY-MM-DD format as JSON."*  
+        It handles complex real-world packaging (e.g. `20.07.26` becomes `2026-07-20`), extracts batch codes like `BN:PH 07BM`, and identifies brands from emails like `customercare@amul.coop`.
+        """)
+
+    with st.expander("Q5: What happens if the Gemini API has a high-demand spike or network drop?"):
+        st.markdown("""
+        **In Easy Words:**  
+        We designed a multi-layer fallback architecture:  
+        1. **Model Fallback Chain:** The system first tries `gemini-3.5-flash`. If it encounters a temporary 503 spike, it automatically tries `gemini-3.1-flash-lite`, then `gemini-3.8-flash`.  
+        2. **Heuristic Regex Parser:** If the user is completely offline without an API key, an internal regex parser extracts `DD.MM.YY` dates and quantities so the app never crashes.
+        """)
+
+    with st.expander("Q6: What is the Dual-Engine Database Fallback feature?"):
+        st.markdown("""
+        **In Easy Words:**  
+        The system is designed for developer convenience:  
+        It tries to connect to PostgreSQL first. If PostgreSQL credentials aren't set up yet, it automatically falls back to a local SQLite database (`expiry_tracker.db`) with identical schema and queries. Anyone can clone the repo and run it instantly with zero configuration!
+        """)
+
+    with st.expander("Q7: What is FIFO and how is it implemented?"):
+        st.markdown("""
+        **In Easy Words:**  
+        **FIFO** stands for **First-In, First-Out**. Products that expire first should always be moved to the front of the shelf and sold first.  
+        In our app (Tab 4), cashiers and stock managers can record checkouts when items are sold or disposed of. Deducting stock keeps inventory counts accurate, and a 1-click button allows disposing of all expired stock at once.
+        """)
+
