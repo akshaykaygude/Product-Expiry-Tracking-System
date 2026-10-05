@@ -1,0 +1,24 @@
+# ==============================================================================
+# EXPIRY TRACKER SYSTEM - PYTHON DEPENDENCIES
+# ==============================================================================
+# Database Driver: PostgreSQL binary adapter for raw, high-performance SQL
+psycopg2-binary>=2.9.9
+
+# Artificial Intelligence: Official Google GenAI SDK (Free-tier Gemini 2.5 Flash)
+google-genai>=2.28.0
+
+# Configuration & Secrets Management
+python-dotenv>=1.0.0
+
+# Data Validation & Typing
+pydantic>=2.0.0
+
+# Terminal UI & Visual Dashboard Reporting
+rich>=13.0.0
+tabulate>=0.9.0
+
+# Image Processing (for OCR / Vision Scan branch)
+pillow>=10.0.0
+
+# User-Friendly Web Interface
+streamlit>=1.30.0

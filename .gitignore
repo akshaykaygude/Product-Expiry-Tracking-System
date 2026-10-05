@@ -1,0 +1,41 @@
+# ==============================================================================
+# Git Ignore Rules for Product Expiry Tracking System
+# ==============================================================================
+
+# Secrets and environment configurations
+.env
+*.env
+!.env.example
+
+# Local SQLite databases & test state
+*.db
+*.sqlite
+*.sqlite3
+expiry_tracker.db
+
+# Incident & alert broadcast logs
+*.log
+alerts.log
+
+# Python cache & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE configurations
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini
