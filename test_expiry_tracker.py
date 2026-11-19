@@ -250,6 +250,19 @@ class TestAIExtractionAndOCR(unittest.TestCase):
     def setUp(self) -> None:
         self.extractor = GeminiExtractor()
 
+    def test_multi_date_disambiguation_prioritizes_expiry_over_mfg(self) -> None:
+        """Verify that labels containing both MFG and EXP dates correctly extract EXP."""
+        label_with_two_dates = (
+            "DAIRY FRESH HOMOGENIZED MILK 1L\n"
+            "MFG DATE: 2026-01-10\n"
+            "BEST BEFORE: 2026-10-25\n"
+            "LOT# MLK-9021\n"
+            "QTY: 12"
+        )
+        res = self.extractor._heuristic_text_parser(label_with_two_dates)
+        self.assertEqual(res.expiry_date, date(2026, 10, 25))
+        self.assertNotEqual(res.expiry_date, date(2026, 1, 10))
+
     def test_heuristic_parser_extracts_all_attributes(self) -> None:
         """Verify extracting SKU, Name, Expiry Date, and Quantity from OCR stream."""
         raw_ocr = (

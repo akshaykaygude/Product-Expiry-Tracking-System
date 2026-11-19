@@ -325,8 +325,26 @@ class GeminiExtractor:
 
     def _find_date_in_text(self, text: str) -> Optional[date]:
         """
-        Identifies date patterns inside arbitrary label strings.
+        Identifies date patterns inside arbitrary label strings with priority
+        for Expiry/Best Before markers over Manufacturing/Packaging markers.
         """
+        # Pre-filter: If label contains multiple dates (e.g. MFG and EXP),
+        # prioritize lines with EXP, EXPIRE, BEST BEFORE, or USE BY
+        lines = text.splitlines()
+        exp_lines = [l for l in lines if re.search(r'\b(exp|expiry|best before|use by|bb|valid)\b', l, re.IGNORECASE)]
+        if exp_lines:
+            for l in exp_lines:
+                found = self._extract_date_pattern(l)
+                if found:
+                    return found
+
+        # If no explicit EXP line matched, evaluate full text excluding purely MFG lines
+        non_mfg_lines = [l for l in lines if not re.search(r'\b(mfg|pkd|packed|produced|manufacture)\b', l, re.IGNORECASE)]
+        search_text = "\n".join(non_mfg_lines) if non_mfg_lines else text
+        return self._extract_date_pattern(search_text)
+
+    def _extract_date_pattern(self, text: str) -> Optional[date]:
+        """Helper to search date patterns in a specific line or text block."""
         # ISO pattern: 2026-10-25 or 2026/10/25
         iso_match = re.search(r'\b(20\d{2})[-/.](0[1-9]|1[0-2])[-/.](0[1-9]|[12]\d|3[01])\b', text)
         if iso_match:
