@@ -1,12 +1,20 @@
 # 📦 Product Expiry Tracking System (FMCG / Retail FIFO Engine)
 
-A production-grade, architectural implementation of an intelligent Product Expiry Tracking System with First-In, First-Out (FIFO) stock rotation built in Python 3.10+.
+> **An Intelligent Retail & Pharmacy Inventory Monitoring System**  
+> *Automating expiry date logging via Multimodal OCR / Gemini Vision AI, enforcing First-In, First-Out (FIFO) stock rotation, and preventing costly retail spoilage.*
+
+[![CI Pipeline](https://github.com/akshaykaygude/Product-Expiry-Tracking-System/actions/workflows/ci.yml/badge.svg)](https://github.com/akshaykaygude/Product-Expiry-Tracking-System/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)](Dockerfile)
+[![Streamlit](https://img.shields.io/badge/Streamlit-Web%20UI-FF4B4B.svg?logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![Database](https://img.shields.io/badge/Database-PostgreSQL%20%7C%20SQLite-336791.svg)](database.py)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
-## 🏗️ Architecture Blueprint Mapping
+## 🏗️ Architecture Blueprint
 
-This system strictly maps to the Mermaid architectural workflow:
+This system is built around a closed-loop inventory tracking architecture from packaging scanning to stock checkout:
 
 ```mermaid
 graph TD
@@ -21,13 +29,13 @@ graph TD
     Mode -->|AI / Image Scan| OCR[Upload Photo of Label / Barcode]
     OCR --> Gemini[AI / OCR Extracts Expiry Date]
     Gemini --> Form
-    Form --> DB[(PostgreSQL / Database Update)]
+    Form --> DB[(PostgreSQL / SQLite Database)]
     DB --> Calc[Compute: Days Remaining = Expiry Date - Current Date]
     Calc --> StatusCheck{Evaluate Days Remaining}
     StatusCheck -->|Days <= 0| Expired[Mark Status: EXPIRED]
     StatusCheck -->|0 < Days <= Threshold| Near[Mark Status: NEAR EXPIRY]
     StatusCheck -->|Days > Threshold| Safe[Mark Status: SAFE]
-    Expired --> AlertTrigger[Trigger Real-Time Dashboard & Email Alerts]
+    Expired --> AlertTrigger[Trigger Dashboard & Email Alerts]
     Near --> AlertTrigger
     Safe --> Dash[Display standard inventory lists & reports]
     AlertTrigger --> Action[Action: Stock Rotation / FIFO / Safe Disposal]
@@ -46,167 +54,130 @@ graph TD
 
 ---
 
-## ⚡ Tech Stack Specifications
+## 🎯 Current Capabilities: What Already Works
 
-- **Backend Engine**: Python 3.10+ (Clean, modular, production-ready design)
-- **Database Infrastructure**: PostgreSQL using `psycopg2-binary` (High-performance parameterized raw SQL queries with automatic SQLite developer fallback)
-- **Artificial Intelligence**: Google Gemini API free-tier via the official `google-genai` SDK (`gemini-2.5-flash`)
-- **Presentation & Dashboards**: `rich` & `tabulate` (Color-coded KPI cards, status badges, and interactive modals)
-- **Data Validation**: `pydantic` v2 (Strict type checking, date normalization, and boundary enforcement)
+The following components are fully implemented, verified, and tested in this codebase:
+
+- [x] **AI / OCR Label Date Extraction (`gemini_extractor.py`)**:
+  - Ingests product packaging images (JPG, PNG) or raw scanner text streams.
+  - Employs Google Gemini 2.5 Flash via `google-genai` with a deterministic local regex/heuristic fallback for offline use.
+  - Multi-date disambiguation: automatically prioritizes Expiry / Best-Before markers (`EXP`, `BB`, `USE BY`) over Manufacturing (`MFG`, `PKD`) dates.
+- [x] **Mathematical Lifespan Engine (`lifespan_engine.py`)**:
+  - Computes $	ext{Days Remaining} = 	ext{Expiry Date} - 	ext{Today}$.
+  - Dynamically classifies stock into strict status tiers: **SAFE** ($> 30	ext{ days}$), **NEAR EXPIRY** ($0 < 	ext{Days} \le 30$), and **EXPIRED** ($\le 0	ext{ days}$).
+  - Sorts active inventory using FIFO (First-In, First-Out) priority to prevent shrink and waste.
+- [x] **Dual Persistence Layer (`database.py`)**:
+  - Production PostgreSQL driver using parameterized SQL queries.
+  - Zero-configuration local SQLite fallback (`expiry_tracker.db`) enabling immediate out-of-the-box local testing.
+- [x] **Interactive Web Application (`app_streamlit.py`)**:
+  - Full browser dashboard with live KPI counters, status filtering, packaging image upload scanner, manual entry, and checkout actions.
+- [x] **Terminal UI & Event Runner (`main.py`, `ui.py`)**:
+  - Color-coded Rich terminal tables, status badges, and interactive CLI menus.
+- [x] **Alerting & Audit Logger (`alerts.py`)**:
+  - Formats urgent alerts for near-expiry and expired stock with write-ahead file logging (`alerts.log`).
+- [x] **Automated Testing Suite (`test_expiry_tracker.py`)**:
+  - Comprehensive unit and integration test suite covering lifespan equations, DB operations, multi-date parsing, and stock checkout.
+- [x] **Continuous Integration & Containerization**:
+  - GitHub Actions CI running on Python 3.10 and 3.11 (`.github/workflows/ci.yml`).
+  - Production-ready `Dockerfile` and `docker-compose.yml`.
 
 ---
 
-## 🚀 Quick Start Guide: How to Run the Project
+## ⚠️ Known Limitations & Real-World Edge Cases
 
-### 1. Prerequisites & Environment Setup
+We believe in documenting real-world challenges transparently:
 
-Ensure Python 3.10+ is installed on your system. Open your terminal in the project directory:
+1. **Regional Date Ambiguity**:
+   - In numerical formats without letters (e.g., `04/05/2026`), disambiguating between US (`MM/DD/YYYY`) and European/Indian (`DD/MM/YYYY`) conventions remains ambiguous when the day is $\le 12$. The heuristic parser currently defaults to `DD/MM/YYYY`.
+2. **Curved & Foil Packaging Distortion**:
+   - Extreme optical glare on plastic wraps or curved bottle bottlenecks can degrade camera-based OCR accuracy. In production, users can verify and override extracted fields before committing to the database.
+3. **Multi-Lot Batch Tracking**:
+   - While identical SKUs with different expiration dates are supported as distinct records, automated pallet consolidation across multi-warehouse locations is currently planned for v2.
 
-```powershell
-# Navigate to the project directory
-cd "d:\Expiry tracker project"
+---
 
-# Install required dependencies
-pip install -r requirements.txt
+## 🗺️ Development Roadmap & Next Milestones
+
+- [x] **v1.0 (Core Engine)**: Mathematical lifespan equations, FIFO queue, and SQLite/PostgreSQL persistence.
+- [x] **v1.1 (Multimodal Vision)**: Google Gemini 2.5 Flash OCR integration with offline heuristic fallback.
+- [x] **v1.2 (Interactive Web UI)**: Streamlit dashboard with image upload and instant checkout workflows.
+- [x] **v1.3 (DevOps & CI)**: Docker multi-stage containerization and GitHub Actions automated test pipeline.
+- [ ] **v2.0 (Barcode Hardware Integration)**: Direct GS1-128 and EAN-13 barcode scanner support with global product catalog lookup.
+- [ ] **v2.1 (Offline Edge OCR)**: Lightweight on-device OCR model (ONNX Runtime / Tesseract) for offline warehouse environments without cloud access.
+- [ ] **v2.2 (Multi-Store ERP Sync)**: Webhook endpoints for automated synchronization with SAP and Shopify inventory.
+
+---
+
+## 🚀 Quick Start: How to Run the Project
+
+### Option A: Interactive Web UI (Recommended)
+Launch the Streamlit web interface in your browser:
+```bash
+streamlit run app_streamlit.py
 ```
+Open **`http://localhost:8501`** to view the live dashboard, upload packaging labels, and manage inventory.
 
 ---
 
-### 2. Configure Credentials (.env)
-
-The repository includes a ready-to-use `.env` file (and `.env.example`). Open `.env` and set your credentials:
-
-```ini
-# PostgreSQL Database Settings
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=postgres
-DB_USER=postgres
-DB_PASSWORD=your_postgres_password_here
-FALLBACK_TO_SQLITE=true
-
-# Google Gemini API (Free Tier from https://aistudio.google.com/)
-GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL=gemini-3.5-flash
-
-# Lifespan Rules & Alert Configuration
-EXPIRY_THRESHOLD_DAYS=30
-MANAGER_ALERT_EMAIL=inventory-manager@store.internal
-ALERT_SENDER_EMAIL=alerts@inventory-system.internal
-```
-
-> **Note on Developer Resilience**: If PostgreSQL or Gemini credentials are not yet configured, the system automatically falls back to the local SQLite engine (`expiry_tracker.db`) and a deterministic heuristic OCR parser. You can run and test everything out of the box with zero setup friction!
-
----
-
-### 3. Running the Application
-
-#### Option A: Modern Streamlit Web UI (Recommended)
-Launch the user-friendly interactive web application in your browser:
-```powershell
-streamlit run app.py
-```
-This launches a browser-based dashboard with:
-- **Real-Time Visual KPI Cards** (Expired, Near Expiry, Safe)
-- **Instant Demo Seed Button** (1-click test of all 3 states)
-- **Drag-and-Drop AI Label Scanner** (Gemini Vision)
-- **Interactive Search & Category Filters**
-- **1-Click Checkout & Hazardous Disposal Controls**
-- **Live Email Broadcast Audit Logs**
-
----
-
-#### Option B: Interactive CLI Mode (Terminal State Machine)
-Launch the interactive terminal dashboard:
-```powershell
+### Option B: Terminal CLI Mode
+Run the interactive console application:
+```bash
 python main.py
 ```
-This opens the interactive menu allowing you to:
-1. Perform manual item entry (`[1]`)
-2. Scan packaging images or OCR labels with Gemini AI (`[2]`)
-3. View real-time inventory dashboards & status checks (`[3]`)
-4. Check-out, rotate, or safely dispose of stock (`[4]`)
-5. Seed demo data illustrating all 3 status boundaries (`[5]`)
-6. Run system diagnostics (`[6]`)
 
 ---
 
-#### Option B: Quick Demo Seed & Dashboard (One Command)
-Populate sample records (Expired, Near Expiry, Safe) and immediately visualize the real-time dashboard and email alert triggers:
-```powershell
-python main.py --seed
+### Option C: Docker Deployment
+Run the complete stack (app + PostgreSQL) with Docker Compose:
+```bash
+docker compose up --build
 ```
 
 ---
 
-#### Option C: View Dashboard Non-Interactively
-```powershell
-python main.py --dashboard
-```
-
----
-
-#### Option D: Test AI / OCR Label Extraction
-Test Gemini multimodal extraction on text streams or image files:
-```powershell
-# Test on sample milk receipt / OCR label:
-python main.py --test-ai "sample_labels/sample_ocr_milk.txt"
-
-# Test on sample pharmacy label:
-python main.py --test-ai "sample_labels/sample_ocr_pharmacy.txt"
-
-# Test on raw text directly:
-python main.py --test-ai "LOT# 9981 FRESH YOGURT EXP: 2026-10-18 QTY: 6"
-```
-
----
-
-#### Option E: Run Automated Test Suite
-Run the 21 unit and integration tests covering all 7 architectural nodes:
-```powershell
+### Option D: Run Automated Test Suite
+Execute the unit and integration test suite:
+```bash
 python -m unittest test_expiry_tracker.py
 ```
 
 ---
 
-## 📊 Core Workflow Breakdown
+## 📁 Repository Structure
 
-| Node # | Architecture Component | Module | Functional Description |
-| :--- | :--- | :--- | :--- |
-| **Node 1** | `[Start -> Mode]` | `main.py` | Event loop prompting user between Manual Entry and AI Scan. |
-| **Node 2** | `[Manual Entry -> Form]` | `ui.py` | Validated CLI form capturing SKU, Name, Expiry Date, Quantity. |
-| **Node 3** | `[AI / Image Scan -> Gemini]` | `gemini_extractor.py` | Calls `google-genai` to extract dates and fields from packaging. |
-| **Node 4** | `[Data Persistence DB]` | `database.py` | Parameterized raw SQL UPSERT and table management in PostgreSQL. |
-| **Node 5** | `[Processing Core Calc]` | `lifespan_engine.py` | Evaluates equation: `Days Remaining = Expiry - Today`. Assigns `EXPIRED` ($\le 0$), `NEAR EXPIRY` ($0 < \text{Days} \le 30$), or `SAFE` ($> 30$). |
-| **Node 6** | `[Action Triggers & Dash]` | `alerts.py` & `ui.py` | Renders color-coded table, triggers urgent simulated email alerts and audit log (`alerts.log`). |
-| **Node 7** | `[UpdateOut -> CheckOut -> End]` | `inventory_service.py` | Deducts sold items, executes safe disposal of expired goods, completes session. |
-
----
-
-## 📁 Project File Structure
-
-```
-d:\Expiry tracker project\
-│
-├── .env                         # Active configuration & API credentials
+```text
+Product-Expiry-Tracking-System/
+├── .github/workflows/
+│   └── ci.yml                   # GitHub Actions automated CI testing workflow
+├── Dockerfile                   # Container build recipe
+├── docker-compose.yml           # Multi-container orchestration (App + PostgreSQL)
+├── .dockerignore                # Docker build exclusions
 ├── .env.example                 # Configuration template for developers
-├── requirements.txt             # Required Python dependencies
-├── README.md                    # Project documentation & execution guide
+├── requirements.txt             # Project dependencies
+├── README.md                    # Documentation, architecture, capabilities & roadmap
+├── LICENSE                      # MIT Open-Source License
 │
+├── app_streamlit.py             # 🌟 Interactive Streamlit web dashboard
+├── main.py                      # Interactive Terminal CLI entry point
 ├── config.py                    # 12-factor configuration & environment parser
-├── database.py                  # PostgreSQL raw SQL persistence layer (psycopg2)
-├── gemini_extractor.py          # Google GenAI (Gemini 2.5 Flash) vision & OCR extractor
-├── models.py                    # Pydantic v2 schemas, status enums & domain models
-├── lifespan_engine.py           # Mathematical lifespan equation & boundary evaluation
-├── alerts.py                    # Real-time alert triggers & urgent email broadcast simulator
+├── database.py                  # PostgreSQL & SQLite persistence layer
+├── gemini_extractor.py          # Gemini 2.5 Flash vision & OCR extractor
+├── lifespan_engine.py           # Mathematical lifespan equations & FIFO classifier
 ├── inventory_service.py         # Business service layer orchestrating workflows
-├── ui.py                        # Rich CLI dashboard, forms, tables & status badges
-├── main.py                      # Main executable application entry point
-├── test_expiry_tracker.py       # 21 comprehensive unit & integration tests
+├── alerts.py                    # Real-time alert triggers & audit log simulator
+├── models.py                    # Pydantic v2 schemas and domain models
+├── ui.py                        # Rich terminal formatting & status badges
+├── test_expiry_tracker.py       # Comprehensive unit and integration test suite
 │
-└── sample_labels/               # Sample assets for testing AI vision/OCR branch
+└── sample_labels/               # Sample packaging test fixtures
     ├── sample_ocr_milk.txt
     ├── sample_ocr_pharmacy.txt
     ├── artisan_cheese_label.png
     └── generate_sample_image.py
 ```
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
