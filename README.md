@@ -5,7 +5,6 @@
 
 [![CI Pipeline](https://github.com/akshaykaygude/Product-Expiry-Tracking-System/actions/workflows/ci.yml/badge.svg)](https://github.com/akshaykaygude/Product-Expiry-Tracking-System/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)](Dockerfile)
 [![Streamlit](https://img.shields.io/badge/Streamlit-Web%20UI-FF4B4B.svg?logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![Database](https://img.shields.io/badge/Database-PostgreSQL%20%7C%20SQLite-336791.svg)](database.py)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -79,7 +78,6 @@ The following components are fully implemented, verified, and tested in this cod
   - Comprehensive unit and integration test suite covering lifespan equations, DB operations, multi-date parsing, and stock checkout.
 - [x] **Continuous Integration & Containerization**:
   - GitHub Actions CI running on Python 3.10 and 3.11 (`.github/workflows/ci.yml`).
-  - Production-ready `Dockerfile` and `docker-compose.yml`.
 
 ---
 
@@ -101,7 +99,7 @@ We believe in documenting real-world challenges transparently:
 - [x] **v1.0 (Core Engine)**: Mathematical lifespan equations, FIFO queue, and SQLite/PostgreSQL persistence.
 - [x] **v1.1 (Multimodal Vision)**: Google Gemini 2.5 Flash OCR integration with offline heuristic fallback.
 - [x] **v1.2 (Interactive Web UI)**: Streamlit dashboard with image upload and instant checkout workflows.
-- [x] **v1.3 (DevOps & CI)**: Docker multi-stage containerization and GitHub Actions automated test pipeline.
+- [x] **v1.3 (DevOps & CI)**: Automated test pipeline via GitHub Actions across Python versions.
 - [ ] **v2.0 (Barcode Hardware Integration)**: Direct GS1-128 and EAN-13 barcode scanner support with global product catalog lookup.
 - [ ] **v2.1 (Offline Edge OCR)**: Lightweight on-device OCR model (ONNX Runtime / Tesseract) for offline warehouse environments without cloud access.
 - [ ] **v2.2 (Multi-Store ERP Sync)**: Webhook endpoints for automated synchronization with SAP and Shopify inventory.
@@ -127,14 +125,6 @@ python main.py
 
 ---
 
-### Option C: Docker Deployment
-Run the complete stack (app + PostgreSQL) with Docker Compose:
-```bash
-docker compose up --build
-```
-
----
-
 ### Option D: Run Automated Test Suite
 Execute the unit and integration test suite:
 ```bash
@@ -149,9 +139,6 @@ python -m unittest test_expiry_tracker.py
 Product-Expiry-Tracking-System/
 ├── .github/workflows/
 │   └── ci.yml                   # GitHub Actions automated CI testing workflow
-├── Dockerfile                   # Container build recipe
-├── docker-compose.yml           # Multi-container orchestration (App + PostgreSQL)
-├── .dockerignore                # Docker build exclusions
 ├── .env.example                 # Configuration template for developers
 ├── requirements.txt             # Project dependencies
 ├── README.md                    # Documentation, architecture, capabilities & roadmap
